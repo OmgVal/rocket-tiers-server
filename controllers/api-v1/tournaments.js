@@ -6,89 +6,87 @@ const multer = require('multer')
 const { unlinkSync } = require('fs')
 const uploads = multer({ dest: 'uploads/' })
 
-// GET /posts - test endpoint
+// GET /tournaments - test endpoint
 router.get('/', async (req, res) => {
     try { 
-        const allTourn = await db.Tournament.find({})
-        allTourn.sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1))
-        res.json(sortedTourn)
+        const allTourn = await db.Tournament.find().sort({"created_at": 1})
+        res.json(allTourn)
     } catch (error) {
         console.log(error)
         res.status(500).json({ msg: 'server error'  })
     }
-    
 })
 
-// router.post('/', uploads.single('image'), async (req, res) => {
-//     try {
-//       // find the user
-//       const user = await db.User.findById(req.body.userId)
-//     //   console.log(req.body, req.file)
-//       const uploadedResponse = await cloudinary.uploader.upload(req.file.path)
-//     //   console.log(uploadedResponse)
+router.post('/', uploads.single('image'), async (req, res) => {
+    try {
+      // find the user
+      const admin = await db.Admin.findById(req.body.adminId)
+    //   console.log(req.body, req.file)
+      const uploadedResponse = await cloudinary.uploader.upload(req.file.path)
+    //   console.log(uploadedResponse)
   
-//       const newPost = await db.Post.create({
-//           content: req.body.content,
-//           user: user.id,
-//           photo: uploadedResponse.url     
-      
-//       })
-//       user.posts.push(newPost.id)
-//       await user.save()
-//       res.status(201).json(newPost)
-//       unlinkSync(req.file.path)
-//     } catch (error) {
-//       console.log(error)
-//       res.status(500).json({ msg: 'server error'  })
-//     }
-//   })
+      const newTour = await db.Tournament.create({
+          content: req.body.content,
+          admin: admin.id,
+          url: req.body.url,
+          photo: uploadedResponse.url     
+      })
 
-// // GET /:postid 
-// router.get('/:postid', async (req, res) => {
-//     try {
-//         const post = await db.Post.findById(req.params.postid).populate({path:'comments', populate: {path: 'user'}}).populate('likes').populate('user')
-//         res.json(post)
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
+      admin.tournaments.push(newTour.id)
+      await admin.save()
+      res.status(201).json(newTour)
+      unlinkSync(req.file.path)
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'server error'  })
+    }
+  })
 
-// // Like a post
-// router.post('/:postid/like', async (req, res) => {
-//     try {
-//         const post = await db.Post.findById(req.params.postid)
-//         const user = await db.User.findById(req.body.userId)
-//         const like = {user: user}
-//         user.likedposts.push(post)
-//         await user.save()
-//         post.likes.push(like)
-//         await post.save()
-//         res.json(post)
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
-// // Unlike a post
-// router.put('/:postid/like', async (req, res) => {
-//     try {
-//         const post = await db.Post.findById(req.params.postid)
-//         const index = post.likes.findIndex((like) => {
-//             return like.user == req.body.userId})
-//         const user = await db.User.findById(req.body.userId)
-//         const indexLikedPost = user.likedposts.findIndex((likepost) => {
-//             return likepost == post.id})
-//         user.likedposts.splice(indexLikedPost, 1)
-//         post.likes.splice(index, 1)
-//         await post.save()
-//         await user.save()
-//         res.json(post)
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
+// GET /:id 
+router.get('/:id', async (req, res) => {
+    try {
+        const Tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: {path: 'user'}}).populate('submissions').populate({path:'roster', populate: {path: 'user'}})
+        res.json(Tournament)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
+
+// submission
+router.post('/:id/register', async (req, res) => {
+    try {
+        const user = await db.User.findById(req.body.userId)
+        const newSub = { teamsize: req.body.teamsize, othermember: req.body.othermember, user: user}
+        const tour = await db.Tournament.findById(req.params.id).populate('user')
+        tour.submissions = [newSub, ...tour.submissions]
+        await tour.save()
+  
+        res.status(201).json(newSub)
+      } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'server error'  })
+      }
+})
+// Unlike a post
+router.put('/id/like', async (req, res) => {
+    try {
+        const post = await db.Post.findById(req.params.postid)
+        const index = post.likes.findIndex((like) => {
+            return like.user == req.body.userId})
+        const user = await db.User.findById(req.body.userId)
+        const indexLikedPost = user.likedposts.findIndex((likepost) => {
+            return likepost == post.id})
+        user.likedposts.splice(indexLikedPost, 1)
+        post.likes.splice(index, 1)
+        await post.save()
+        await user.save()
+        res.json(post)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
 
 // // Update a post
 // router.put('/:postid', async (req, res) => {

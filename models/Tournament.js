@@ -13,9 +13,14 @@ const CommentSchema = new mongoose.Schema({
 })
 
 const RosterSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+    team: {
+        type: String
+    },
+    members: {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }
     }
 }, {
     timestamps: true
@@ -25,6 +30,9 @@ const RosterSchema = new mongoose.Schema({
 const SubmissionSchema = new mongoose.Schema({
     teamsize: {
         type: Number
+    },
+    othermember: {
+        type: String
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,

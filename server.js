@@ -12,8 +12,9 @@ const rowdyResults = rowdy.begin(app)
 // cross origin resource sharing 
 app.use(cors())
 // request body parsing
-app.use(express.urlencoded({ extended: false })) // optional 
-app.use(express.json())
+app.use(express.urlencoded({ limit: "50mb", extended: false })) // optional 
+app.use(express.json({ limit: "50mb" }))
+
 
 // GET / -- test index route
 app.get('/', (req, res) => {

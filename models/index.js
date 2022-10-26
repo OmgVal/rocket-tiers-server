@@ -2,9 +2,9 @@
 const mongoose = require("mongoose")
 require('dotenv').config()
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1/mernAuth'
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1/rockettiers'
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true })
 
 const db = mongoose.connection
 
@@ -19,5 +19,7 @@ db.on('error',  err => {
 
 
 module.exports = {
-  User: require('./User')
+  User: require('./User'),
+  Admin: require('./Admin'),
+  Tournament: require('./Tournament')
 }

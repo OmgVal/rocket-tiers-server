@@ -31,6 +31,7 @@ router.post('/', uploads.single('image'), async (req, res) => {
           content: req.body.content,
           admin: admin.id,
           url: req.body.url,
+          category: req.body.category,
           photo: uploadedResponse.url     
       })
 
@@ -47,7 +48,7 @@ router.post('/', uploads.single('image'), async (req, res) => {
 // GET Tournament by id
 router.get('/:id', async (req, res) => {
     try {
-        const Tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: {path: 'user'}}).populate('submissions').populate({path:'roster', populate: {path: 'user'}})
+        const Tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'}).populate('submissions').populate({path:'roster', populate: {path: 'user'}})
         res.json(Tournament)
     } catch(err) {
         console.log(err)
@@ -131,13 +132,27 @@ router.delete('/:id/submission/:subid', async (req, res) => {
 // // Add a comment
 router.post('/:id/comments', async (req, res) => {
     try {
-      const admin = await db.admin.findById(req.body.adminId)
-      const newComment = {content: req.body.content, user: user}
-      const post = await db.Post.findById(req.params.id).populate('user')
-      post.comments = [newComment, ...post.comments]
-      await post.save()
+      if(user) {
+        const user = await db.User.findById(req.body.userId)
+        const userComment = {content: req.body.content, user: user}
+        const tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'})
+        tournament.comments = [userComment, ...tournament.comments]
+        await tournament.save()
+  
+        res.status(201).json(userComment)
+      }
 
-      res.status(201).json(newComment)
+      if(admin) {
+        const admin = await db.Admin.findById(req.body.adminId)
+        const adminComment = {content: req.body.content, user: admin}
+        const tournament = await db.Tournament.findById(req.params.id).populate('admin')
+        tournament.comments = [adminComment, ...tournament.comments]
+        await tournament.save()
+  
+        res.status(201).json(adminComment)
+      }
+
+
     } catch (error) {
       console.log(error)
       res.status(500).json({ msg: 'server error'  })
@@ -147,11 +162,11 @@ router.post('/:id/comments', async (req, res) => {
 // Update a specific comment
 router.put('/:id/comments/:commentid', async (req, res) => {
     try {
-        const post = await db.Post.findById(req.params.id)
-        const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-        post.comments[index] = {id: post.comments[index].id, user: post.comments[index].user, content: req.body.content}
-        await post.save()
-        res.json(post.comments[index])
+        const tournament = await db.Tournament.findById(req.params.id)
+        const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+        tournament.comments[index] = {id: tournament.comments[index].id, user: tournament.comments[index].user, content: req.body.content}
+        await tournament.save()
+        res.json(tournament.comments[index])
     } catch(err) {
         console.log(err)
         res.status(500).json({ msg: 'server error'  })
@@ -160,11 +175,11 @@ router.put('/:id/comments/:commentid', async (req, res) => {
 // delete a specific comment
 router.delete('/:id/comments/:commentid', async (req, res) => {
     try {
-        const post = await db.Post.findById(req.params.id).populate({path:'comments', populate: {path: 'user'}})
-        const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-        post.comments.splice(index, 1)
-        await post.save()
-        res.json(post)
+        const tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'})
+        const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+        tournament.comments.splice(index, 1)
+        await tournament.save()
+        res.json(tournament)
     } catch(err) {
         console.log(err)
         res.status(500).json({ msg: 'server error'  })

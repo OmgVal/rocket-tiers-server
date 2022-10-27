@@ -26,9 +26,15 @@ const UserSchema = new mongoose.Schema({
     type: String
   },
   ranks: {
-    duel: String,
-    doubles: String,
-    standard: String,
+    duel: {
+      type: String
+    },
+    doubles: {
+      type: String
+    },
+    standard: {
+      type: String
+    } 
   },
   submissions: [{
     type: mongoose.Schema.Types.ObjectId,

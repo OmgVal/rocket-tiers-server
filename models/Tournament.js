@@ -37,6 +37,13 @@ const SubmissionSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    approved: {
+        type: Boolean,
+        other: {
+            type: String
+        }
+
     }
 }, {
     timestamps: true

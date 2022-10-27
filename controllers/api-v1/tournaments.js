@@ -17,6 +17,8 @@ router.get('/', async (req, res) => {
     }
 })
 
+
+// New tournament
 router.post('/', uploads.single('image'), async (req, res) => {
     try {
       // find the user
@@ -42,7 +44,7 @@ router.post('/', uploads.single('image'), async (req, res) => {
     }
   })
 
-// GET /:id 
+// GET Tournament by id
 router.get('/:id', async (req, res) => {
     try {
         const Tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: {path: 'user'}}).populate('submissions').populate({path:'roster', populate: {path: 'user'}})
@@ -53,8 +55,36 @@ router.get('/:id', async (req, res) => {
     }
 })
 
+// Update Tournament
+router.put('/:id', async (req, res) => {
+    try {
+        const options = {new: true}
+        const updatedTour = await db.Tournament.findByIdAndUpdate(req.params.id, req.body, options)
+        res.json(updatedTour)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
+
+// Delete Tournament
+router.delete('/:id', async (req, res) => {
+    try {
+        tournament = await db.Tournament.findById(req.params.id)
+        const adminid = tournament.admin
+        const foundAdmin = await db.Admin.findById(adminid)
+        foundAdmin.posts.splice(foundAdmin.tournaments.indexOf(req.params.id),1)
+        await foundAdmin.save()
+        await db.Tournament.findByIdAndDelete(req.params.id)
+        res.sendStatus(204)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
+
 // submission
-router.post('/:id/register', async (req, res) => {
+router.post('/:id/submission', async (req, res) => {
     try {
         const user = await db.User.findById(req.body.userId)
         const newSub = { teamsize: req.body.teamsize, othermember: req.body.othermember, user: user}
@@ -68,105 +98,76 @@ router.post('/:id/register', async (req, res) => {
         res.status(500).json({ msg: 'server error'  })
       }
 })
-// Unlike a post
-router.put('/id/like', async (req, res) => {
+
+// Update a submission
+router.put('/:id/submissions/:subid', async (req, res) => {
     try {
-        const post = await db.Post.findById(req.params.postid)
-        const index = post.likes.findIndex((like) => {
-            return like.user == req.body.userId})
-        const user = await db.User.findById(req.body.userId)
-        const indexLikedPost = user.likedposts.findIndex((likepost) => {
-            return likepost == post.id})
-        user.likedposts.splice(indexLikedPost, 1)
-        post.likes.splice(index, 1)
-        await post.save()
-        await user.save()
-        res.json(post)
+        const tournament = await db.Tournament.findById(req.params.id)
+        const index = tournament.submissions.findIndex((sub) => {return sub.id === req.params.subid})
+        tournament.submissions[index] = {id: tournament.submissions[index].id, user: tournament.submissions[index].user, content: req.body.content}
+        await tournament.save()
+        res.json(tournament.submissions[index])
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
+// delete submission
+router.delete('/:id/submission/:subid', async (req, res) => {
+    try {
+        const tournament = await db.Tournament.findById(req.params.id).populate({path:'submissions'})
+        const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+        tournament.comments.splice(index, 1)
+        await tournament.save()
+        res.json(tournament)
     } catch(err) {
         console.log(err)
         res.status(500).json({ msg: 'server error'  })
     }
 })
 
-// // Update a post
-// router.put('/:postid', async (req, res) => {
-//     try {
-//         const options = {new: true}
-//         const updatedPost = await db.Post.findByIdAndUpdate(req.params.postid, req.body, options)
-//         res.json(updatedPost)
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
 
-// // Delete a post
-// router.delete('/:postid', async (req, res) => {
-//     try {
-//         post = await db.Post.findById(req.params.postid)
-//         const userid = post.user
-//         const foundUser = await db.User.findById(userid)
-//         foundUser.posts.splice(foundUser.posts.indexOf(req.params.postid),1)
-//         await foundUser.save()
-//         await db.Post.findByIdAndDelete(req.params.postid)
-//         res.sendStatus(204)
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
+
 // // Add a comment
-// router.post('/:postid/comments', async (req, res) => {
-//     try {
-//       const user = await db.User.findById(req.body.userId)
-//       const newComment = {content: req.body.content, user: user}
-//       const post = await db.Post.findById(req.params.postid).populate('user')
-//       post.comments = [newComment, ...post.comments]
-//       await post.save()
+router.post('/:id/comments', async (req, res) => {
+    try {
+      const admin = await db.admin.findById(req.body.adminId)
+      const newComment = {content: req.body.content, user: user}
+      const post = await db.Post.findById(req.params.id).populate('user')
+      post.comments = [newComment, ...post.comments]
+      await post.save()
 
-//       res.status(201).json(newComment)
-//     } catch (error) {
-//       console.log(error)
-//       res.status(500).json({ msg: 'server error'  })
-//     }
-// })
-// // Read a specific comment
-// router.get('/:postid/comments/:commentid', async (req, res) => {
-//     try {
-//         const post = await db.Post.findById(req.params.postid).populate('comments')
-//         const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-//         post.comments[index]
-//         res.json(post.comments[index])
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
+      res.status(201).json(newComment)
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: 'server error'  })
+    }
+})
 
-// // Update a specific comment
-// router.put('/:postid/comments/:commentid', async (req, res) => {
-//     try {
-//         const post = await db.Post.findById(req.params.postid)
-//         const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-//         post.comments[index] = {id: post.comments[index].id, user: post.comments[index].user, content: req.body.content}
-//         await post.save()
-//         res.json(post.comments[index])
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
-// // delete a specific comment
-// router.delete('/:postid/comments/:commentid', async (req, res) => {
-//     try {
-//         const post = await db.Post.findById(req.params.postid).populate({path:'comments', populate: {path: 'user'}})
-//         const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-//         post.comments.splice(index, 1)
-//         await post.save()
-//         res.json(post)
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).json({ msg: 'server error'  })
-//     }
-// })
+// Update a specific comment
+router.put('/:id/comments/:commentid', async (req, res) => {
+    try {
+        const post = await db.Post.findById(req.params.id)
+        const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+        post.comments[index] = {id: post.comments[index].id, user: post.comments[index].user, content: req.body.content}
+        await post.save()
+        res.json(post.comments[index])
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
+// delete a specific comment
+router.delete('/:id/comments/:commentid', async (req, res) => {
+    try {
+        const post = await db.Post.findById(req.params.id).populate({path:'comments', populate: {path: 'user'}})
+        const index = post.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+        post.comments.splice(index, 1)
+        await post.save()
+        res.json(post)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
 module.exports = router

@@ -99,9 +99,19 @@ router.post('/:id/submission', async (req, res) => {
         res.status(500).json({ msg: 'server error'  })
       }
 })
+router.get('/:id/submissions', async (req, res) => {
+    try { 
+        const tour = await db.Tournament.findById(req.params.id).populate({path:'submissions', populate: 'user'})
+        const subs = tour.submissions.find().sort({"created_at": 1})
+        res.json(subs)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'server error'  })
+    }
+})
 
 // Update a submission
-router.put('/:id/submissions/:subid', async (req, res) => {
+router.put('/:id/submission/:subid', async (req, res) => {
     try {
         const tournament = await db.Tournament.findById(req.params.id)
         const index = tournament.submissions.findIndex((sub) => {return sub.id === req.params.subid})

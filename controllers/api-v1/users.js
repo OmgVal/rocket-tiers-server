@@ -24,13 +24,10 @@ router.post('/register', uploads.single('image'), async (req, res) => {
     const findUser = await db.User.findOne({
       email: req.body.email
     })
-    const findUsername = await db.User.findOne({
-      username: req.body.username
-    })
+    console.log(req.body)
 
     // don't allow emails to register twice
     if(findUser) return res.status(400).json({ msg: 'email exists already' })
-    if(findUsername) return res.status(400).json({ msg: 'username exists already' })
   
     // hash password
     const password = req.body.password
@@ -39,7 +36,7 @@ router.post('/register', uploads.single('image'), async (req, res) => {
   
     // create new user
     const newUser = new db.User({
-      name: req.body.name,
+      username: req.body.username,
       email: req.body.email,
       password: hashedPassword,
       type: req.body.type

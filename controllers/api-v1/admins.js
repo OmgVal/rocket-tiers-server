@@ -10,6 +10,11 @@ const { unlinkSync } = require('fs')
 const uploads = multer({ dest: 'uploads/' })
 
 
+router.get('/', async (req, res) => {
+  const allAdmins = await db.Admin.find({})
+  res.json(allAdmins)
+})
+
 router.post('/register', uploads.single('image'), async (req, res) => {
     try {
       // check if user exists already
@@ -78,7 +83,7 @@ router.post('/login', async (req, res) => {
     })
 
     const noLoginMessage = 'Incorrect username or password'
-    console.log('foundadmin:', foundAdmin)
+    // console.log('foundadmin:', foundAdmin)
 
     // if the user is not found in the db, return and sent a status of 400 with a message
     if(!foundAdmin) return res.status(400).json({ msg: noLoginMessage})

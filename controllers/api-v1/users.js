@@ -39,10 +39,13 @@ router.post('/register', uploads.single('image'), async (req, res) => {
       username: req.body.username,
       email: req.body.email,
       password: hashedPassword,
-      type: req.body.type
+      type: req.body.type,
+      admin: req.body.admin
     })
   
     await newUser.save()
+    console.log(process.env.ADMIN_SECRET, req.body.adminkey)
+      if (process.env.ADMIN_SECRET != req.body.adminkey) return res.status(400).json({msg: 'why no admin?'})
 
     if (req.file) {
       // upload profile photo
@@ -140,6 +143,8 @@ router.put('/:username/edit', async (req, res) => {
   try {
     // console.log(req.body)
     const options = {new: true} 
+    console.log(process.env.ADMIN_SECRET, req.body.adminkey)
+      if (process.env.ADMIN_SECRET != req.body.adminkey) return res.status(400).json({msg: 'why no admin?'})
     const updatedUser = await db.User.findOneAndUpdate({ username: req.params.username}, req.body, options)
     res.json(updatedUser)
     // console.log(updatedUser)

@@ -6,12 +6,7 @@ const CommentSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'model_type'
-    },
-    model_type: {
-        type: String,
-        enum: ['User', 'Admin' ],
-        required: true 
+        ref: 'user'
     }
 }, {
     timestamps: true
@@ -68,7 +63,7 @@ const TournamentSchema = new mongoose.Schema({
     },
     admin: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Admin'
+        ref: 'user'
     },
     comments: [CommentSchema],
     roster: [RosterSchema],

@@ -20,6 +20,5 @@ db.on('error',  err => {
 
 module.exports = {
   User: require('./User'),
-  Admin: require('./Admin'),
   Tournament: require('./Tournament')
 }

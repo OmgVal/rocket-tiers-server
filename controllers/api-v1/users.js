@@ -112,51 +112,25 @@ router.post('/login', async (req, res) => {
   }
 })
 
-router.post('/admin', async (req, res) => {
-  try {
-    // try to find user in the db
-    const foundAdmin = await db.Admin.findOne({
-      username: req.body.username
-    })
-
-    const noLoginMessage = 'Incorrect username or password'
-    console.log('foundadmin:', foundAdmin)
-
-    // if the user is not found in the db, return and sent a status of 400 with a message
-    if(!foundAdmin) return res.status(400).json({ msg: noLoginMessage})
-    
-    // check the password from the req body against the password in the database
-    const matchPasswords = await bcrypt.compare(req.body.password, foundAdmin.password)
-    
-    // if provided password does not match, return an send a status of 400 with a message
-    if(!matchPasswords) return res.status(400).json({ msg: noLoginMessage})
-
-    // create jwt payload
-    const payload = {
-      username: foundAdmin.username, 
-      id: foundAdmin.id
-    }
-
-    // sign jwt and send back
-    const token = await jwt.sign(payload, process.env.JWT_SECRET)
-
-    res.json({ token })
-  } catch(error) {
-    console.log(error)
-    res.status(500).json({ msg: 'server error'  })
-  }
-})
-
-
 // GET /auth-locked - will redirect if bad jwt token is found
 router.get('/:username', authLockedRoute, async (req, res) => {
   // you will have access to the user on the res.local.user
   try {
-    const profile = await db.User.findOne({
-      username: req.params.username
-    }).populate('submissions')
+    if(res.locals.user){
+      const profile = await db.User.findOne({
+        username: req.params.username
+      }).populate('submissions')
+  
+      res.json(profile)
+    }
 
-    res.json(profile)
+    if(res.locals.admin){
+      const profile = await db.Admin.findOne({
+        username: req.params.username
+      }).populate('tournaments')
+  
+      res.json(profile)
+    }
   } catch(err) {
     console.log(err)
     res.status(500).json({ msg: 'server error'  })
@@ -195,10 +169,9 @@ router.put('/:username/photo', uploads.single('image'), async (req, res) => {
 // delete a profile
 router.delete('/:username', authLockedRoute, async (req, res) => {
   try {
-    if (res.locals.user || res.locals.admin) {
-      await db.User.findByIdAndDelete(res.locals.user.id)
-      res.sendStatus(204)
-    }
+    await db.User.findByIdAndDelete(res.locals.user.id)
+    res.sendStatus(204)
+  
   }catch(err) {
     console.warn(err)
     res.status(500).json({ msg: 'server error'  })

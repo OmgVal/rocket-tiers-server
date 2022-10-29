@@ -128,7 +128,7 @@ router.get('/:username', authLockedRoute, async (req, res) => {
   }
 })
 
-router.get('/:username/verified', authLockedRoute, async (req, res) => {
+router.put('/:username/verified', authLockedRoute, async (req, res) => {
   // you will have access to the user on the res.local.user
   try {
     if(res.locals.user){

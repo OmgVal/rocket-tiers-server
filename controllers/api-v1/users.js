@@ -132,9 +132,10 @@ router.put('/:username/verified', authLockedRoute, async (req, res) => {
   // you will have access to the user on the res.local.user
   try {
     if(res.locals.user){
+      const options = {new: true} 
       const profile = await db.User.findOneAndUpdate({
         username: req.params.username
-      })
+      }, req.body, options)
       
       // console.log(process.env.ADMIN_SECRET, req.body.adminkey)
         if (process.env.ADMIN_SECRET != req.body.adminkey) return res.status(400).json({msg: 'Not Verified, retry adminkey.'})

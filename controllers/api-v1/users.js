@@ -128,21 +128,16 @@ router.get('/:username', authLockedRoute, async (req, res) => {
   }
 })
 
-router.put('/:username/verified', authLockedRoute, async (req, res) => {
+router.put('/:username/verified', async (req, res) => {
   // you will have access to the user on the res.local.user
   try {
-    if(res.locals.user){
-      const options = {new: true} 
-      const profile = await db.User.findOneAndUpdate({
-        username: req.params.username
-      }, req.body, options)
-      
-      // console.log(process.env.ADMIN_SECRET, req.body.adminkey)
-        if (process.env.ADMIN_SECRET != req.body.adminkey) return res.status(400).json({msg: 'Not Verified, retry adminkey.'})
     
-  
-      res.json(profile)
-    }
+    
+    // console.log(process.env.ADMIN_SECRET, req.body.adminkey)
+    if (process.env.ADMIN_SECRET != req.body.adminkey) return res.status(400).json({msg: 'Not Verified, retry adminkey.'})
+    const options = {new: true} 
+    const profile = await db.User.findOneAndUpdate({username: req.params.username}, req.body, options)
+    res.json(profile)
 
   } catch(err) {
     console.log(err)
@@ -156,7 +151,7 @@ router.put('/:username/edit', async (req, res) => {
   try {
     // console.log(req.body)
     const options = {new: true} 
-    const updatedUser = await db.User.findOneAndUpdate({ username: req.params.username}, req.body, options)
+    const updatedUser = await db.User.findOneAndUpdate({ username: req.body.username}, req.body, options)
     res.json(updatedUser)
     // console.log(updatedUser)
   }catch(err) {

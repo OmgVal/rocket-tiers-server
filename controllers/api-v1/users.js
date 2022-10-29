@@ -38,8 +38,8 @@ router.post('/register', uploads.single('image'), async (req, res) => {
     const newUser = new db.User({
       username: req.body.username,
       email: req.body.email,
-      password: hashedPassword,
       type: req.body.type,
+      password: hashedPassword,
       admin: false
     })
   
@@ -122,13 +122,6 @@ router.get('/:username', authLockedRoute, async (req, res) => {
       res.json(profile)
     }
 
-    if(res.locals.admin){
-      const profile = await db.Admin.findOne({
-        username: req.params.username
-      }).populate('tournaments')
-  
-      res.json(profile)
-    }
   } catch(err) {
     console.log(err)
     res.status(500).json({ msg: 'server error'  })

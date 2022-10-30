@@ -43,6 +43,10 @@ const UserSchema = new mongoose.Schema({
   submissions: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tournament'
+  }],
+  tournaments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tournament'
   }]
 }, {
   timestamps: true

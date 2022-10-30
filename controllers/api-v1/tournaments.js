@@ -22,23 +22,25 @@ router.get('/', async (req, res) => {
 router.post('/', uploads.single('image'), async (req, res) => {
     try {
       // find the user
-      const admin = await db.Admin.findById(req.body.adminId)
-    //   console.log(req.body, req.file)
+      //   console.log(req.body, req.file)
       const uploadedResponse = await cloudinary.uploader.upload(req.file.path)
-    //   console.log(uploadedResponse)
-  
+      //   console.log(uploadedResponse)
+      const user = await db.User.findById(req.body.adminId).populate('tournaments')
+      
       const newTour = await db.Tournament.create({
+          title: req.body.title,
           content: req.body.content,
-          admin: admin.id,
+          admin: user,
           url: req.body.url,
           category: req.body.category,
           photo: uploadedResponse.url,
-          ranks: rea.body.ranks,
+          ranks: req.body.ranks,
           reward: req.body.reward     
-      })
+        })
 
-      admin.tournaments.push(newTour.id)
-      await admin.save()
+
+      user.tournaments = [newTour, ...user.tournaments]
+      await user.save()
       res.status(201).json(newTour)
       unlinkSync(req.file.path)
     } catch (error) {
@@ -141,60 +143,48 @@ router.delete('/:id/submission/:subid', async (req, res) => {
 
 
 
-// // Add a comment
-router.post('/:id/comments', async (req, res) => {
-    try {
-      if(user) {
-        const user = await db.User.findById(req.body.userId)
-        const userComment = {content: req.body.content, user: user}
-        const tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'})
-        tournament.comments = [userComment, ...tournament.comments]
-        await tournament.save()
+// // // Add a comment
+// router.post('/:id/comments', async (req, res) => {
+//     try {
+//       if(user) {
+//         const user = await db.User.findById(req.body.userId)
+//         const userComment = {content: req.body.content, user: user}
+//         const tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'})
+//         tournament.comments = [userComment, ...tournament.comments]
+//         await tournament.save()
   
-        res.status(201).json(userComment)
-      }
+//         res.status(201).json(userComment)
+//       }
+//     } catch (error) {
+//       console.log(error)
+//       res.status(500).json({ msg: 'server error'  })
+//     }
+// })
 
-      if(admin) {
-        const admin = await db.Admin.findById(req.body.adminId)
-        const adminComment = {content: req.body.content, user: admin}
-        const tournament = await db.Tournament.findById(req.params.id).populate('admin')
-        tournament.comments = [adminComment, ...tournament.comments]
-        await tournament.save()
-  
-        res.status(201).json(adminComment)
-      }
-
-
-    } catch (error) {
-      console.log(error)
-      res.status(500).json({ msg: 'server error'  })
-    }
-})
-
-// Update a specific comment
-router.put('/:id/comments/:commentid', async (req, res) => {
-    try {
-        const tournament = await db.Tournament.findById(req.params.id)
-        const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-        tournament.comments[index] = {id: tournament.comments[index].id, user: tournament.comments[index].user, content: req.body.content}
-        await tournament.save()
-        res.json(tournament.comments[index])
-    } catch(err) {
-        console.log(err)
-        res.status(500).json({ msg: 'server error'  })
-    }
-})
-// delete a specific comment
-router.delete('/:id/comments/:commentid', async (req, res) => {
-    try {
-        const tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'})
-        const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
-        tournament.comments.splice(index, 1)
-        await tournament.save()
-        res.json(tournament)
-    } catch(err) {
-        console.log(err)
-        res.status(500).json({ msg: 'server error'  })
-    }
-})
+// // Update a specific comment
+// router.put('/:id/comments/:commentid', async (req, res) => {
+//     try {
+//         const tournament = await db.Tournament.findById(req.params.id)
+//         const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+//         tournament.comments[index] = {id: tournament.comments[index].id, user: tournament.comments[index].user, content: req.body.content}
+//         await tournament.save()
+//         res.json(tournament.comments[index])
+//     } catch(err) {
+//         console.log(err)
+//         res.status(500).json({ msg: 'server error'  })
+//     }
+// })
+// // delete a specific comment
+// router.delete('/:id/comments/:commentid', async (req, res) => {
+//     try {
+//         const tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'})
+//         const index = tournament.comments.findIndex((comment) => {return comment.id === req.params.commentid})
+//         tournament.comments.splice(index, 1)
+//         await tournament.save()
+//         res.json(tournament)
+//     } catch(err) {
+//         console.log(err)
+//         res.status(500).json({ msg: 'server error'  })
+//     }
+// })
 module.exports = router

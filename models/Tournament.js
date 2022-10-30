@@ -49,6 +49,9 @@ const SubmissionSchema = new mongoose.Schema({
 })
 
 const TournamentSchema = new mongoose.Schema({
+    title: {
+        type: String
+    },
     photo: {
         type: String
     },
@@ -65,7 +68,7 @@ const TournamentSchema = new mongoose.Schema({
         type: String
     },
     reward: {
-        type: Number
+        type: String
     },
     admin: {
         type: mongoose.Schema.Types.ObjectId,

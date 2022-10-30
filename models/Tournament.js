@@ -61,6 +61,12 @@ const TournamentSchema = new mongoose.Schema({
     category: {
         type: String
     },
+    ranks: {
+        type: String
+    },
+    reward: {
+        type: Number
+    },
     admin: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user'

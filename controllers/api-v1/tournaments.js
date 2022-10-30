@@ -32,7 +32,9 @@ router.post('/', uploads.single('image'), async (req, res) => {
           admin: admin.id,
           url: req.body.url,
           category: req.body.category,
-          photo: uploadedResponse.url     
+          photo: uploadedResponse.url,
+          ranks: rea.body.ranks,
+          reward: req.body.reward     
       })
 
       admin.tournaments.push(newTour.id)

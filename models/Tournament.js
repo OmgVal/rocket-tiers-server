@@ -6,7 +6,7 @@ const CommentSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
+        ref: 'User'
     }
 }, {
     timestamps: true
@@ -52,7 +52,7 @@ const TournamentSchema = new mongoose.Schema({
     title: {
         type: String
     },
-    photo: {
+    image: {
         type: String
     },
     content: {
@@ -72,7 +72,7 @@ const TournamentSchema = new mongoose.Schema({
     },
     admin: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
+        ref: 'User'
     },
     comments: [CommentSchema],
     roster: [RosterSchema],

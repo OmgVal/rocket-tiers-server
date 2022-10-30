@@ -52,8 +52,9 @@ router.post('/', uploads.single('image'), async (req, res) => {
 // GET Tournament by id
 router.get('/:id', async (req, res) => {
     try {
-        const Tournament = await db.Tournament.findById(req.params.id).populate({path:'comments', populate: 'user'}).populate('submissions').populate({path:'roster', populate: {path: 'user'}})
-        res.json(Tournament)
+        const tournament = await db.Tournament.findById( req.params.id).populate('comments').populate('submissions').populate('roster')
+        console.log(tournament)
+        res.json(tournament)
     } catch(err) {
         console.log(err)
         res.status(500).json({ msg: 'server error'  })

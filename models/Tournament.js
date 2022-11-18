@@ -40,6 +40,7 @@ const SubmissionSchema = new mongoose.Schema({
     },
     approved: {
         type: Boolean,
+        default: false,
         other: {
             type: String
         }
@@ -50,6 +51,9 @@ const SubmissionSchema = new mongoose.Schema({
 
 const TournamentSchema = new mongoose.Schema({
     title: {
+        type: String
+    },
+    date: {
         type: String
     },
     image: {

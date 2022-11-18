@@ -9,7 +9,7 @@ const uploads = multer({ dest: 'uploads/' })
 // GET /tournaments - test endpoint
 router.get('/', async (req, res) => {
     try { 
-        const allTourn = await db.Tournament.find().sort({"created_at": 1})
+        const allTourn = await db.Tournament.find().sort({"created_at": -1})
         res.json(allTourn)
     } catch (error) {
         console.log(error)
@@ -17,30 +17,29 @@ router.get('/', async (req, res) => {
     }
 })
 
-
 // New tournament
 router.post('/', uploads.single('image'), async (req, res) => {
     try {
       // find the user
-      //   console.log(req.body, req.file)
+      const admin = await db.User.findById(req.body.adminId)
+    //   console.log(req.body, req.file)
       const uploadedResponse = await cloudinary.uploader.upload(req.file.path)
-      //   console.log(uploadedResponse)
-      const user = await db.User.findById(req.body.adminId).populate('tournaments')
-      
+    //   console.log(uploadedResponse)
+  
       const newTour = await db.Tournament.create({
-          title: req.body.title,
           content: req.body.content,
-          admin: user,
+          title: req.body.title,
+          date: req.body.date,
+          admin: admin.id,
           url: req.body.url,
           category: req.body.category,
           image: uploadedResponse.url,
           ranks: req.body.ranks,
           reward: req.body.reward     
-        })
+      })
 
-
-      user.tournaments = [newTour, ...user.tournaments]
-      await user.save()
+      admin.tournaments.push(newTour.id)
+      await admin.save()
       res.status(201).json(newTour)
       unlinkSync(req.file.path)
     } catch (error) {
@@ -49,10 +48,41 @@ router.post('/', uploads.single('image'), async (req, res) => {
     }
   })
 
+
+// router.post('/', uploads.single('image'), async (req, res) => {
+//     try {
+//       // find the user
+//       //   console.log(req.body, req.file)
+//       const uploadedResponse = await cloudinary.uploader.upload(req.file.path)
+//       //   console.log(uploadedResponse)
+//       const user = await db.User.findById(req.body.adminId).populate('tournaments')
+      
+//       const newTour = await db.Tournament.create({
+//           title: req.body.title,
+//           content: req.body.content,
+//           admin: user,
+//           url: req.body.url,
+//           category: req.body.category,
+//           image: uploadedResponse.url,
+//           ranks: req.body.ranks,
+//           reward: req.body.reward     
+//         })
+
+
+//       user.tournaments = [newTour, ...user.tournaments]
+//       await user.save()
+//       res.status(201).json(newTour)
+//       unlinkSync(req.file.path)
+//     } catch (error) {
+//       console.log(error)
+//       res.status(500).json({ msg: 'server error'  })
+//     }
+//   })
+
 // GET Tournament by id
 router.get('/:id', async (req, res) => {
     try {
-        const tournament = await db.Tournament.findById( req.params.id).populate('comments').populate({path: 'comments', populate: 'user'}).populate('submissions').populate('roster')
+        const tournament = await db.Tournament.findById(req.params.id).populate('comments').populate({path: 'comments', populate: 'user'}).populate('submissions').populate('roster')
         // console.log(tournament)
         res.json(tournament)
     } catch(err) {
@@ -91,11 +121,12 @@ router.put('/:id', async (req, res) => {
 // Delete Tournament
 router.delete('/:id', async (req, res) => {
     try {
-        tournament = await db.Tournament.findById(req.params.id)
-        const adminid = tournament.admin
-        const foundAdmin = await db.Admin.findById(adminid)
-        foundAdmin.posts.splice(foundAdmin.tournaments.indexOf(req.params.id),1)
-        await foundAdmin.save()
+        const tournament = await db.Tournament.findById(req.params.id)
+        console.log(tournament)
+        const admin = tournament.admin
+        const foundUser = await db.User.findById(admin)
+        foundUser.tournaments.splice(foundUser.tournaments.indexOf(req.params.id),1)
+        await foundUser.save()
         await db.Tournament.findByIdAndDelete(req.params.id)
         res.sendStatus(204)
     } catch(err) {
@@ -107,23 +138,29 @@ router.delete('/:id', async (req, res) => {
 // submission
 router.post('/:id/submission', async (req, res) => {
     try {
-        const user = await db.User.findById(req.body.userId)
-        const newSub = { teamsize: req.body.teamsize, othermember: req.body.othermember, user: user}
-        const tour = await db.Tournament.findById(req.params.id).populate('user')
-        tour.submissions = [newSub, ...tour.submissions]
-        await tour.save()
+        const user = await db.User.findById(req.body.user)
+
+        if(user) {
+            const newSub = { teamsize: req.body.teamsize, othermember: req.body.othermember, user: user}
+            const tour = await db.Tournament.findById(req.params.id).populate('submissions')
+            tour.submissions = [newSub, ...tour.submissions]
+            await tour.save()
+            res.status(201).json(newSub)
+        }
   
-        res.status(201).json(newSub)
       } catch (error) {
         console.log(error)
         res.status(500).json({ msg: 'server error'  })
       }
 })
+
 router.get('/:id/submissions', async (req, res) => {
     try { 
-        const tour = await db.Tournament.findById(req.params.id).populate({path:'submissions', populate: 'user'})
-        const subs = tour.submissions.find().sort({"created_at": 1})
-        res.json(subs)
+        const tour = await db.Tournament.findById(req.params.id).populate('submissions').populate({path:'submissions', populate: 'user'})
+    
+        // const subs = tour.submissions.sort({"created_at": 1})
+        res.json(tour)
+
     } catch (error) {
         console.log(error)
         res.status(500).json({ msg: 'server error'  })
@@ -143,6 +180,7 @@ router.put('/:id/submission/:subid', async (req, res) => {
         res.status(500).json({ msg: 'server error'  })
     }
 })
+
 // delete submission
 router.delete('/:id/submission/:subid', async (req, res) => {
     try {
@@ -156,8 +194,6 @@ router.delete('/:id/submission/:subid', async (req, res) => {
         res.status(500).json({ msg: 'server error'  })
     }
 })
-
-
 
 // // Add a comment
 router.post('/:id/comments', async (req, res) => {
